@@ -42,6 +42,8 @@ version `13.4.19` of Next.js.
 
 ### 1. Trailing semicolon (`;`) stripped before bundling, breaking `@import` and following bundled rule
 
+Ticket for this issue: https://github.com/vercel/next.js/issues/54999
+
 _Indicator: when this issue is reproduced with this repository, the rendered text will be black until manually "fixed"._
 
 It looks like a trailing semicolon (`;`) in SCSS files is stripped as part of transpilation of SCSS to CSS, before
@@ -81,6 +83,8 @@ Simply manually re-adding the missing semicolon at the end of the `@import` line
 [`src/app/lib`]: src/app/lib
 
 ### 2. In-JavaScript `import`s of SCSS files re-ordered, resulting in bundled `@import` not being first in chunk
+
+Ticket for this issue: https://github.com/vercel/next.js/issues/55000
 
 _Indicator: when this issue is reproduced with this repository, the rendered text will be red._
 
