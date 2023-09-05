@@ -1,7 +1,7 @@
 # Next.js SCSS Bundling Bugs
 
 This repository reproduces two bugs with Next.js + SCSS bundling when creating an optimised production build (bugs are
-not present when running in dev mode).
+not present when running in dev mode). Configuring `swcMinify: false` does not make a difference.
 
 Only one bug manifests at a time, seemingly at random; rebuilding and re-running the production server repeatedly
 results in different outcomes.
