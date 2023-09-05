@@ -1,34 +1,114 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Next.js SCSS Bundling Bugs
 
-## Getting Started
+This repository reproduces two bugs with Next.js + SCSS bundling when creating an optimised production build (bugs are
+not present when running in dev mode).
 
-First, run the development server:
+Only one bug manifests at a time, seemingly at random; rebuilding and re-running the production server repeatedly
+results in different outcomes.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+These bugs have been replicated using this repository with both version `13.4.19` and version `13.4.20-canary.16` of
+Next.js. The first bug has been reproduced using a private repository with version `13.4.7`, version `13.4.12`, and
+version `13.4.19` of Next.js.
+
+[//]: # (@formatter:off)
+<!-- TOC -->
+* [Next.js SCSS Bundling Bugs](#nextjs-scss-bundling-bugs)
+  * [Reproduction](#reproduction)
+    * [Observed criteria](#observed-criteria)
+  * [Issues](#issues)
+    * [1. Trailing semicolon (`;`) stripped before bundling, breaking `@import` and following bundled rule](#1-trailing-semicolon--stripped-before-bundling-breaking-import-and-following-bundled-rule)
+    * [2. In-JavaScript `import`s of SCSS files re-ordered, resulting in bundled `@import` not being first in chunk](#2-in-javascript-imports-of-scss-files-re-ordered-resulting-in-bundled-import-not-being-first-in-chunk)
+<!-- TOC -->
+[//]: # (@formatter:on)
+
+## Reproduction
+
+1. Clone this repository
+2. Execute `npm install`
+3. Execute `npm run build`
+4. Execute `npm run start`
+5. Navigate to [`http://localhost:3000`]
+6. _Observe that one of the two documented issues have occurred_ (in both cases, the font rendered will be incorrect)
+7. Repeat steps 3 through 6 until the other documented issue has occurred
+
+[`http://localhost:3000`]: http://localhost:3000
+
+### Observed criteria
+
+- The styling being imported _must_ be SCSS; standard CSS will **not** reproduce the issue (although no SCSS-specific
+  features need to be used)
+
+## Issues
+
+### 1. Trailing semicolon (`;`) stripped before bundling, breaking `@import` and following bundled rule
+
+_Indicator: when this issue is reproduced with this repository, the rendered text will be black until manually "fixed"._
+
+It looks like a trailing semicolon (`;`) in SCSS files is stripped as part of transpilation of SCSS to CSS, before
+bundling occurs. For standalone files, this makes sense, as the trailing semicolon is optional. However, it doesn't make
+sense when these files are about to be bundled, because then they are no longer "standalone".
+
+For this reproduction, the transpiled and bundled output of the styling under [`src/app/lib`] ends up being:
+
+[//]: # (@formatter:off)
+```css
+@import"https://fonts.googleapis.com/css2?family=Roboto+Condensed"
+:root{--validation:#be1a06}
 ```
+[//]: # (@formatter:on)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Screenshot additionally showing relevant CSS warnings in the browser console:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+![trailing semicolon issue generated output](./resources/1.1.generated.png "Trailing semicolon issue generated output")
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+Screenshot showing the rendered page:
 
-## Learn More
+![trailing semicolon issue render](./resources/1.2.render.png "Trailing semicolon issue render")
 
-To learn more about Next.js, take a look at the following resources:
+Simply manually re-adding the missing semicolon at the end of the `@import` line will fix the styling:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+[//]: # (@formatter:off)
+```css
+@import"https://fonts.googleapis.com/css2?family=Roboto+Condensed";
+:root{--validation:#be1a06}
+```
+[//]: # (@formatter:on)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+![trailing semicolon issue manual fix](./resources/1.3.manual-fix.png "Trailing semicolon issue manual fix")
 
-## Deploy on Vercel
+![expected page render](./resources/0.1.expected.png "Expected page render")
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+[`src/app/lib`]: src/app/lib
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+### 2. In-JavaScript `import`s of SCSS files re-ordered, resulting in bundled `@import` not being first in chunk
+
+_Indicator: when this issue is reproduced with this repository, the rendered text will be red._
+
+Sometimes, bundling results in a change of ordering of SCSS files `import`ed from within JavaScript. This is problematic
+when the first SCSS file has one or more `@import` lines, but it ends up not being at the beginning of the chunk, which
+violates the CSS specification.
+
+For this reproduction, the transpiled and bundled output of the styling under [`src/app/lib`] ends up sometimes being:
+
+[//]: # (@formatter:off)
+```css
+:root {
+  --validation:#be1a06
+}
+@import"https://fonts.googleapis.com/css2?family=Roboto+Condensed"
+```
+[//]: # (@formatter:on)
+
+Screenshot additionally showing relevant CSS warning in the browser console:
+
+![import re-ordering issue generated output](./resources/2.1.generated.png "Import re-ordering issue generated output")
+
+Screenshot showing the rendered page:
+
+![import re-ordering issue render](./resources/2.2.render.png "Import re-ordering issue render")
+
+Screenshot showing the expected rendering:
+
+![expected page render](./resources/0.1.expected.png "Expected page render")
+
+[`src/app/lib`]: src/app/lib
