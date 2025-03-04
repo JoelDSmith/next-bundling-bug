@@ -6,9 +6,22 @@ not present when running in dev mode). Configuring `swcMinify: false` does not m
 Only one bug manifests at a time, seemingly at random; rebuilding and re-running the production server repeatedly
 results in different outcomes.
 
-These bugs have been replicated using this repository with both version `13.4.19` and version `13.4.20-canary.16` of
-Next.js. The first bug has been reproduced using a private repository with version `13.4.7`, version `13.4.12`, and
+The first bug has been reproduced using a private repository with version `13.4.7`, version `13.4.12`, and
 version `13.4.19` of Next.js.
+
+Both bugs can been replicated using this repository with any of the following versions of Next.js:
+
+- `13.4.19`
+- `13.4.20-canary.16`
+
+Additionally, the first bug can been replicated using this repository with any of the following versions of Next.js:
+
+- `14.2.24`
+- `15.2.1`
+- `15.2.2-canary.0`
+
+I cannot be certain whether the second bug is actually fixed in Next.js 14+, given it was always inconsistent to
+reproduce, and the rarer bug of the two.
 
 [//]: # (@formatter:off)
 <!-- TOC -->
